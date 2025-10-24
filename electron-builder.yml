@@ -1,0 +1,110 @@
+# 应用程序的唯一标识符
+appId: com.tlyanyu.muplayer
+# 应用程序的产品名称
+productName: MuPlayer
+copyright: Copyright © tlyanyu 2025
+# 构建资源所在的目录
+directories:
+  buildResources: public
+# 包含在最终应用程序构建中的文件列表
+# 使用通配符 ! 表示排除不需要的文件
+files:
+  - "public/**"
+  - "out/**"
+  - "!**/.vscode/*"
+  - "!src/*"
+  - "!electron.vite.config.{js,ts,mjs,cjs}"
+  - "!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}"
+  - "!{.env,.env.*,.npmrc,pnpm-lock.yaml}"
+# 哪些文件将不会被压缩，而是解压到构建目录
+asarUnpack:
+  - public/**
+win:
+  # 可执行文件名
+  executableName: MuPlayer
+  # 应用程序的图标文件路径
+  icon: public/icons/favicon-512x512.png
+  # 构建类型
+  target:
+    # 安装版
+    - nsis
+    # 打包版
+    - portable
+# NSIS 安装器配置
+nsis:
+  # 是否一键式安装
+  oneClick: false
+  # 安装程序的生成名称
+  artifactName: ${productName}-${version}-setup.${ext}
+  # 创建的桌面快捷方式名称
+  shortcutName: ${productName}
+  # 卸载时显示的名称
+  uninstallDisplayName: ${productName}
+  # 创建桌面图标
+  createDesktopShortcut: always
+  # 是否允许 UAC 提升权限
+  allowElevation: true
+  # 是否允许用户更改安装目录
+  allowToChangeInstallationDirectory: true
+  # 安装包图标
+  installerIcon: public/icons/favicon.ico
+  # 卸载命令图标
+  uninstallerIcon: public/icons/favicon.ico
+# macOS 平台配置
+mac:
+  # 可执行文件名
+  executableName: MuPlayer
+  # 应用程序的图标文件路径
+  icon: public/icons/favicon-512x512.png
+  # 权限继承的文件路径
+  entitlementsInherit: build/entitlements.mac.plist
+  # 扩展信息，如权限描述
+  extendInfo:
+    - NSCameraUsageDescription: Application requests access to the device's camera.
+    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+  # 是否启用应用程序的 Notarization（苹果的安全审核）
+  notarize: false
+  darkModeSupport: true
+  category: public.app-category.music
+  target:
+    - target: dmg
+      arch:
+        - universal
+    - target: zip
+      arch:
+        - universal
+# macOS 平台的 DMG 配置
+dmg:
+  # DMG 文件的生成名称
+  artifactName: ${name}-${version}.${ext}
+# Linux 平台配置
+linux:
+  # 可执行文件名
+  executableName: muplayer
+  # 应用程序的图标文件路径
+  icon: public/icons/favicon-512x512.png
+  # 构建类型（仅保留常用格式）
+  target:
+    - AppImage
+    - deb
+    - tar.gz
+  # 维护者信息
+  maintainer: tlyanyu
+  # 应用程序类别
+  category: Audio;Music
+# AppImage 配置
+appImage:
+  #  AppImage 文件的生成名称
+  artifactName: ${name}-${version}.${ext}
+# 是否在构建之前重新编译原生模块
+npmRebuild: false
+# 自动更新的配置
+publish:
+  # 更新提供商
+  provider: github
+  # 自动更新检查的 URL
+  # url: https://example.com/auto-updates
+  owner: "tlyanyu"
+  repo: "MuPlayer"

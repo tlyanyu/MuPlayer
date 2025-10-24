@@ -1,0 +1,172 @@
+name: Build and Release Electron App
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'leaflow-deploy/**'
+      - '*.example'
+      - '.env.example'
+      - '.env.docker-compose.example'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.gitattributes'
+  release:
+    types: [published]
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'leaflow-deploy/**'
+      - '*.example'
+      - '.env.example'
+      - '.env.docker-compose.example'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.gitattributes'
+
+jobs:
+  build:
+    name: Build Electron App (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows 构建
+          - os: windows-latest
+            platform: win
+            arch: x64
+
+          # macOS 构建 (支持 x64 和 arm64)
+          - os: macos-latest
+            platform: mac
+            arch: universal
+
+          # Linux 构建
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+        env:
+          # 跳过某些可选依赖的构建以加速安装
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 0
+
+      # Windows 平台构建
+      - name: Build Windows app
+        if: matrix.platform == 'win'
+        run: |
+          npx electron-vite build
+          npx electron-builder --win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # macOS 平台构建
+      - name: Build macOS app
+        if: matrix.platform == 'mac'
+        run: |
+          npx electron-vite build
+          npx electron-builder --mac --universal
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Linux 平台构建
+      - name: Build Linux app
+        if: matrix.platform == 'linux'
+        run: |
+          npx electron-vite build
+          npx electron-builder --linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 上传构建产物
+      - name: Upload artifacts (Windows)
+        if: matrix.platform == 'win'
+        uses: actions/upload-artifact@v4
+        with:
+          name: MuPlayer-Windows-${{ github.sha }}
+          path: |
+            dist/*.exe
+            dist/*.nsis.7z
+          retention-days: 7
+
+      - name: Upload artifacts (macOS)
+        if: matrix.platform == 'mac'
+        uses: actions/upload-artifact@v4
+        with:
+          name: MuPlayer-macOS-${{ github.sha }}
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/*-mac.zip
+          retention-days: 7
+
+      - name: Upload artifacts (Linux)
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: MuPlayer-Linux-${{ github.sha }}
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.tar.gz
+          retention-days: 7
+
+      # 仅在发布标签时上传到 GitHub Releases
+      - name: Upload to GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/*-mac.zip
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.tar.gz
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 构建摘要任务
+  build-summary:
+    name: Build Summary
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Check build status
+        run: |
+          if [ "${{ needs.build.result }}" == "success" ]; then
+            echo "✅ All platform builds completed successfully!"
+          else
+            echo "❌ Some platform builds failed. Please check the logs."
+            exit 1
+          fi

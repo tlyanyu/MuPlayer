@@ -1,0 +1,132 @@
+services:
+  # ==================== 后端 API 服务 ====================
+  music-api:
+    # 使用预构建镜像（推荐，快速启动）
+    image: ghcr.io/tlyanyu/multiplatformmusicapi:latest
+
+    # 本地构建方式（本地开发或镜像未发布时使用）
+    # 取消下面三行注释并注释掉上面的 image 行即可使用本地构建
+    # build:
+    #   context: ../multiPlatformMusicApi
+    #   dockerfile: Dockerfile
+
+    container_name: music-api
+
+    # 端口映射
+    # 格式：宿主机IP:端口:容器端口
+    # 127.0.0.1:3000 仅本地访问，适合前端容器内部调用
+    # 0.0.0.0:3000 或 3000 允许外部访问，适合独立部署后端
+    ports:
+      - "${MUSIC_API_PORT:-127.0.0.1:3000}:3000"
+
+    # 环境变量
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+
+      # CORS 配置（容器部署时通常不需要，前端通过 Nginx 代理访问）
+      # 如果前端和后端分别部署，需要配置允许的来源
+      - CORS_ALLOW_ORIGIN=${CORS_ALLOW_ORIGIN:-http://localhost:25884}
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/status', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+    # 重启策略
+    restart: unless-stopped
+
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # 网络
+    networks:
+      - muplayer-network
+
+  # ==================== 前端 Web 服务 ====================
+  muplayer:
+    # 使用预构建镜像（推荐，快速启动）
+    image: ghcr.io/tlyanyu/muplayer:latest
+
+    # 本地构建方式（本地开发或镜像未发布时使用）
+    # 取消下面六行注释并注释掉上面的 image 行即可使用本地构建
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     - VITE_API_BACKEND=http://music-api:3000
+    #     - VITE_DEPLOY_MODE=container
+
+    container_name: muplayer
+
+    # 时区挂载（可选，用于日志时间显示）
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+
+    # 端口映射
+    ports:
+      - "${MUPLAYER_PORT:-25884}:25884"
+
+    # 环境变量
+    environment:
+      # 后端 API 地址（容器内部通过服务名访问）
+      - VITE_API_BACKEND=http://music-api:3000
+      
+      # 部署模式（container: 容器部署，前端通过 Nginx 代理访问后端）
+      - VITE_DEPLOY_MODE=container
+      
+      # Node.js 环境配置
+      - NODE_ENV=production
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+
+    # 依赖关系：等待 music-api 健康后再启动
+    depends_on:
+      music-api:
+        condition: service_healthy
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:25884/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+    # 重启策略
+    restart: unless-stopped
+
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # 网络
+    networks:
+      - muplayer-network
+
+# ==================== 网络配置 ====================
+networks:
+  muplayer-network:
+    driver: bridge

@@ -1,0 +1,42 @@
+# 依赖
+node_modules
+npm-debug.log
+yarn.lock
+pnpm-lock.yaml
+
+# 版本控制
+.git
+.gitignore
+.github
+
+# 开发工具
+.vscode
+.idea
+.DS_Store
+*.swp
+*.swo
+
+# 构建产物
+dist
+out
+*.log
+
+# 文档
+README.md
+LICENSE
+CHANGELOG.md
+*.md
+
+# 配置文件（Docker 内部不需要）
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# 环境文件
+.env.local
+.env.*.local
+
+# 备份文件
+*.backup
+*.bak
+*.old
