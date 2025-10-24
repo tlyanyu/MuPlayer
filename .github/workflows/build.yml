@@ -122,7 +122,6 @@ jobs:
           path: |
             dist/*.dmg
             dist/*.zip
-            dist/*-mac.zip
           retention-days: 7
 
       - name: Upload artifacts (Linux)
@@ -145,7 +144,6 @@ jobs:
             dist/*.exe
             dist/*.dmg
             dist/*.zip
-            dist/*-mac.zip
             dist/*.AppImage
             dist/*.deb
             dist/*.tar.gz
