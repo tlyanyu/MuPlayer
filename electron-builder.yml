@@ -27,9 +27,9 @@ win:
   # 构建类型
   target:
     # 安装版
-    - nsis
+    - target: nsis
     # 打包版
-    - portable
+    - target: portable
 # NSIS 安装器配置
 nsis:
   # 是否一键式安装
@@ -50,6 +50,10 @@ nsis:
   installerIcon: public/icons/favicon.ico
   # 卸载命令图标
   uninstallerIcon: public/icons/favicon.ico
+# Portable 便携版配置
+portable:
+  # 便携版的生成名称（避免文件名中出现空格）
+  artifactName: ${productName}-${version}-portable.${ext}
 # macOS 平台配置
 mac:
   # 可执行文件名
