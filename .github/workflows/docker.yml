@@ -2,36 +2,9 @@ name: Build and Publish Docker Image
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'leaflow-deploy/**'
-      - '*.example'
-      - '.env.example'
-      - '.env.docker-compose.example'
-      - 'LICENSE'
-      - '.gitignore'
-      - '.gitattributes'
-  release:
-    types: [published]
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'leaflow-deploy/**'
-      - '*.example'
-      - '.env.example'
-      - '.env.docker-compose.example'
-      - 'LICENSE'
-      - '.gitignore'
-      - '.gitattributes'
 
 jobs:
   docker:
@@ -48,13 +21,8 @@ jobs:
       - name: Determine build mode
         id: build_mode
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "mode=release" >> $GITHUB_OUTPUT
-            echo "🚀 Release mode: Will push Docker images to registry"
-          else
-            echo "mode=test" >> $GITHUB_OUTPUT
-            echo "🔨 Test mode: Build only, will not push images"
-          fi
+          echo "mode=release" >> $GITHUB_OUTPUT
+          echo "🚀 Release mode: Building and pushing Docker images to registry"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -67,7 +35,6 @@ jobs:
             network=host
 
       - name: Log in to Docker Hub
-        if: startsWith(github.ref, 'refs/tags/v')
         continue-on-error: true
         uses: docker/login-action@v3
         with:
@@ -75,7 +42,6 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Log in to GitHub Container Registry
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -108,7 +74,7 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -118,20 +84,10 @@ jobs:
         run: |
           echo "### 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "✅ **Release Build** - Images pushed to registry" >> $GITHUB_STEP_SUMMARY
-            echo "📦 Image digest: ${{ steps.docker_build.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Published tags:**" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          else
-            echo "🔨 **Test Build** - Images NOT pushed (build validation only)" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "💡 To publish images, create and push a version tag:" >> $GITHUB_STEP_SUMMARY
-            echo '```bash' >> $GITHUB_STEP_SUMMARY
-            echo "git tag v1.0.0" >> $GITHUB_STEP_SUMMARY
-            echo "git push origin v1.0.0" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "✅ **Release Build** - Images pushed to registry" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Image digest: ${{ steps.docker_build.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Published tags:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
