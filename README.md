@@ -175,90 +175,27 @@ npm install
 npm run dev
 ```
 
-### 🌐 方式 4：静态网站部署（请自行验证）
+### 🌐 方式 4：Vercel 静态托管
 
-适合部署到 Vercel、Netlify、GitHub Pages 等静态托管服务。
+**步骤 1：Fork 本仓库**
 
-**步骤 1：配置环境变量**
+**步骤 2：登录/注册 vercel 并关联到你的 GitHub 账号**
 
-创建 `.env` 文件并设置：
+**步骤 3：在 Vercel 配置并部署**
 
-```env
-VITE_DEPLOY_MODE=static
-VITE_API_BACKEND=https://your-backend-api.com
-```
+访问 https://vercel.com/new ，Import 你 fork 的 muplayer 仓库，在配置页面设置：
 
-**步骤 2：构建静态文件**
-
-```bash
-npm run build:web
-```
-
-构建完成后，静态文件将生成在 `web` 目录。
-
-**步骤 3：部署到托管平台**
-
-<details>
-<summary><b>Vercel 部署</b></summary>
-
-```bash
-# 安装 Vercel CLI
-npm i -g vercel
-
-# 部署
-cd web
-vercel --prod
-```
-
-或通过 Vercel Dashboard 导入项目，设置：
+- **Framework Preset**：`Other`
 - **Build Command**: `npm run build:web`
-- **Output Directory**: `web`
-- **Environment Variables**: `VITE_DEPLOY_MODE=static`, `VITE_API_BACKEND=你的后端地址`
-</details>
+- **Output Directory**: `out/renderer`
+- **Install Command**: `npm install`
+- **Environment Variables**: 
+  - `VITE_DEPLOY_MODE=static`
+  - `VITE_API_BACKEND=你的后端地址`
 
-<details>
-<summary><b>Netlify 部署</b></summary>
-
-```bash
-# 安装 Netlify CLI
-npm i -g netlify-cli
-
-# 部署
-cd web
-netlify deploy --prod
-```
-
-或通过 Netlify Dashboard 导入项目，设置：
-- **Build Command**: `npm run build:web`
-- **Publish Directory**: `web`
-- **Environment Variables**: `VITE_DEPLOY_MODE=static`, `VITE_API_BACKEND=你的后端地址`
-</details>
-
-<details>
-<summary><b>Nginx 部署</b></summary>
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-    root /path/to/web;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Gzip 压缩
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
-}
-```
-</details>
 
 > **⚠️ 重要提醒**：
-> 1. 后端 API 必须配置 CORS 允许跨域访问
-> 2. 建议使用 HTTPS 部署，确保数据传输安全
-> 3. 可配置 CDN 加速静态资源访问
+> 后端 API 必须配置 CORS 允许跨域访问
 
 
 ## ⚙️ 配置说明
